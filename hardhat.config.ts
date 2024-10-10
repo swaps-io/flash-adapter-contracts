@@ -23,7 +23,9 @@ const config: HardhatUserConfig = {
     disambiguatePaths: true,
     runOnCompile: true,
     strict: true,
-    only: [],
+    only: [
+      'contracts/delegate-receive-adapter/DelegateReceiveAdapter.sol'
+    ],
   },
 };
 
