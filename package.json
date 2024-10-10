@@ -6,7 +6,10 @@
   "scripts": {
     "h": "hardhat",
     "build": "hardhat compile",
-    "b": "hardhat compile"
+    "b": "yarn build",
+    "test": "hardhat test",
+    "t": "yarn test",
+    "tg": "yarn test --grep"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^0.15.6",
