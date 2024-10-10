@@ -24,7 +24,7 @@ const config: HardhatUserConfig = {
     runOnCompile: true,
     strict: true,
     only: [
-      'contracts/delegate-receive-adapter/DelegateReceiveAdapter.sol'
+      'contracts/adapter/delegate-receive/DelegateReceiveAdapter.sol'
     ],
   },
 };
