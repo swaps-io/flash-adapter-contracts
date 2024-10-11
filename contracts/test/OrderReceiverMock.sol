@@ -21,6 +21,10 @@ contract OrderReceiverMock is IOrderReceiver {
 
     mapping(bytes32 orderHash => bool) public orderAssetReceived;
 
+    function setOrderAssetReceived(bytes32 orderHash_, bool assetReceived_) external {
+        orderAssetReceived[orderHash_] = assetReceived_;
+    }
+
     function receiveOrderAsset(ReceiveOrderMock calldata order_, bytes calldata fromSignature_) external {
         require(msg.sender == order_.toActor, ReceiveCallerMismatch());
 
