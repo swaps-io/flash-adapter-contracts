@@ -14,7 +14,7 @@ interface IDelegateReceiveAdapter is IERC1271 {
 
     error OrderAlreadyReceived(bytes32 orderHash);
     error OrderNotReceived(bytes32 orderHash);
-    error InsufficientBalance(uint256 balance, uint256 minBalance);
+    error InsufficientBalanceAfter(uint256 balance, uint256 minBalance);
 
     function orderReceiver() external view returns (IOrderReceiver);
 

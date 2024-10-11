@@ -25,7 +25,7 @@ contract DelegateReceiveAdapter is IDelegateReceiveAdapter {
 
         require(orderReceiver.orderAssetReceived(orderHash_), OrderNotReceived(orderHash_));
         uint256 balanceAfter = token_.balanceOf(msg.sender);
-        require(balanceAfter >= minBalanceAfter_, InsufficientBalance(balanceAfter, minBalanceAfter_));
+        require(balanceAfter >= minBalanceAfter_, InsufficientBalanceAfter(balanceAfter, minBalanceAfter_));
 
         emit DelegateAssetReceive(orderHash_);
     }

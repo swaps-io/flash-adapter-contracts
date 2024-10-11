@@ -402,7 +402,7 @@ describe('DelegateReceiveAdapter', function () {
         [approveCall, receiveCall], // calls
       ]),
     ).rejectedWith(
-      `custom error 'InsufficientBalance(${executorBalance - order.fromAmount}, ${minBalanceAfter})'`,
+      `custom error 'InsufficientBalanceAfter(${executorBalance - order.fromAmount}, ${minBalanceAfter})'`,
     );
   });
 
