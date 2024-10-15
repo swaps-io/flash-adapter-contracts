@@ -2,32 +2,22 @@
 
 pragma solidity ^0.8.26;
 
-import {IDelegateReceiveResolver} from "../adapter/delegate-receive/interfaces/IDelegateReceiveResolver.sol";
-
 import {OrderReceiverMock, ReceiveOrderMock} from "./OrderReceiverMock.sol";
 
-struct ResolverDataMock {
-    ReceiveOrderMock order;
-    bool shouldCallReceive;
-}
+contract DelegateReceiveResolverMock {
+    error ResolverTestError();
 
-contract DelegateReceiveResolverMock is IDelegateReceiveResolver {
     OrderReceiverMock public immutable orderReceiver;
 
     constructor() {
         orderReceiver = new OrderReceiverMock();
     }
 
-    function receiveDelegateOrderAsset(bytes calldata resolverData_) external {
-        ResolverDataMock calldata dataMock;
-        assembly { dataMock := resolverData_.offset }
+    function receiveDelegateOrderAsset(ReceiveOrderMock calldata order_, uint256 flowFlags_) external {
+        require(flowFlags_ & 1 == 0, ResolverTestError()); // shouldRevert
 
-        if (dataMock.shouldCallReceive) {
-            orderReceiver.receiveOrderAsset(dataMock.order, "");
+        if (flowFlags_ & 2 == 0) { // ignoreReceive
+            orderReceiver.receiveOrderAsset(order_, "");
         }
-    }
-
-    function resolverDataMock(ResolverDataMock calldata) external pure {
-        // In-use for type-safe ResolverDataMock struct data encoding (ABI index: 3)
     }
 }

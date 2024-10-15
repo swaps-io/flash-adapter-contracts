@@ -7,8 +7,6 @@ import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 
 import {IOrderReceiver} from "../../../flash/order/interfaces/IOrderReceiver.sol";
 
-import {IDelegateReceiveResolver} from "./IDelegateReceiveResolver.sol";
-
 interface IDelegateReceiveAdapter is IERC1271 {
     event DelegateAssetReceive(bytes32 indexed orderHash);
 
@@ -18,5 +16,5 @@ interface IDelegateReceiveAdapter is IERC1271 {
 
     function orderReceiver() external view returns (IOrderReceiver);
 
-    function receiveDelegateAsset(IERC20 token, uint256 amount, uint256 minBalanceAfter, bytes32 orderHash, IDelegateReceiveResolver resolver, bytes calldata resolverData) external;
+    function receiveDelegateAsset(IERC20 token, uint256 amount, uint256 minBalanceAfter, bytes32 orderHash, address resolver, bytes calldata resolverData) external;
 }

@@ -6,6 +6,22 @@ import { expect } from 'chai';
 import { logGas } from '../../utils/logGas';
 import { expectEvent } from '../../utils/expectEvent';
 
+interface ResolverFlowFlagParams {
+  shouldRevert?: boolean;
+  ignoreReceive?: boolean;
+}
+
+const resolverFlowFlags = (params: ResolverFlowFlagParams = {}): bigint => {
+  let flags = 0n;
+  if (params.shouldRevert) {
+    flags |= 1n;
+  }
+  if (params.ignoreReceive) {
+    flags |= 2n;
+  }
+  return flags;
+}
+
 describe('DelegateReceiveAdapter', function () {
   async function deployFixture() {
     const resolver = await viem.deployContract('DelegateReceiveResolverMock');
@@ -40,13 +56,14 @@ describe('DelegateReceiveAdapter', function () {
     } as const;
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
-    const resolverData = encodeAbiParameters(
-      resolver.abi[3].inputs,
-      [{
-        order,
-        shouldCallReceive: true,
-      }],
-    );
+    const resolverData = encodeFunctionData({
+      abi: resolver.abi,
+      functionName: 'receiveDelegateOrderAsset',
+      args: [
+        order, // order
+        resolverFlowFlags(), // flowFlags
+      ],
+    });
 
     const approveCall = {
       target: token.address,
@@ -153,13 +170,14 @@ describe('DelegateReceiveAdapter', function () {
       [approveCall], // calls
     ]);
 
-    const resolverData = encodeAbiParameters(
-      resolver.abi[3].inputs,
-      [{
-        order,
-        shouldCallReceive: true,
-      }],
-    );
+    const resolverData = encodeFunctionData({
+      abi: resolver.abi,
+      functionName: 'receiveDelegateOrderAsset',
+      args: [
+        order, // order
+        resolverFlowFlags(), // flowFlags
+      ],
+    });
 
     const receiveCall = {
       target: adapter.address,
@@ -233,13 +251,14 @@ describe('DelegateReceiveAdapter', function () {
     } as const;
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
-    const resolverData = encodeAbiParameters(
-      resolver.abi[3].inputs,
-      [{
-        order,
-        shouldCallReceive: true,
-      }],
-    );
+    const resolverData = encodeFunctionData({
+      abi: resolver.abi,
+      functionName: 'receiveDelegateOrderAsset',
+      args: [
+        order, // order
+        resolverFlowFlags(), // flowFlags
+      ],
+    });
 
     const receiveCall = {
       target: adapter.address,
@@ -286,13 +305,14 @@ describe('DelegateReceiveAdapter', function () {
     } as const;
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
-    const resolverData = encodeAbiParameters(
-      resolver.abi[3].inputs,
-      [{
-        order,
-        shouldCallReceive: true,
-      }],
-    );
+    const resolverData = encodeFunctionData({
+      abi: resolver.abi,
+      functionName: 'receiveDelegateOrderAsset',
+      args: [
+        order, // order
+        resolverFlowFlags(), // flowFlags
+      ],
+    });
 
     const approveCall = {
       target: token.address,
@@ -353,13 +373,14 @@ describe('DelegateReceiveAdapter', function () {
     } as const;
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
-    const resolverData = encodeAbiParameters(
-      resolver.abi[3].inputs,
-      [{
-        order,
-        shouldCallReceive: true,
-      }],
-    );
+    const resolverData = encodeFunctionData({
+      abi: resolver.abi,
+      functionName: 'receiveDelegateOrderAsset',
+      args: [
+        order, // order
+        resolverFlowFlags(), // flowFlags
+      ],
+    });
 
     const balanceAfter = executorBalance - order.fromAmount;
     const minBalanceAfter = balanceAfter + 1n; // (Will be barely exceeded)
@@ -426,13 +447,14 @@ describe('DelegateReceiveAdapter', function () {
     // Mark as already received
     await receiver.write.setOrderAssetReceived([orderHash, true]);
 
-    const resolverData = encodeAbiParameters(
-      resolver.abi[3].inputs,
-      [{
-        order,
-        shouldCallReceive: true,
-      }],
-    );
+    const resolverData = encodeFunctionData({
+      abi: resolver.abi,
+      functionName: 'receiveDelegateOrderAsset',
+      args: [
+        order, // order
+        resolverFlowFlags(), // flowFlags
+      ],
+    });
 
     const approveCall = {
       target: token.address,
@@ -493,13 +515,14 @@ describe('DelegateReceiveAdapter', function () {
     } as const;
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
-    const resolverData = encodeAbiParameters(
-      resolver.abi[3].inputs,
-      [{
-        order,
-        shouldCallReceive: false, // Simulate not calling receive
-      }],
-    );
+    const resolverData = encodeFunctionData({
+      abi: resolver.abi,
+      functionName: 'receiveDelegateOrderAsset',
+      args: [
+        order, // order
+        resolverFlowFlags({ ignoreReceive: true }), // flowFlags (simulate not calling receive)
+      ],
+    });
 
     const approveCall = {
       target: token.address,
@@ -540,6 +563,74 @@ describe('DelegateReceiveAdapter', function () {
       ]),
     ).rejectedWith(
       `custom error 'OrderNotReceived("${orderHash}")'`,
+    );
+  });
+
+  it('Should revert with resolver error bubble up', async function () {
+    const { resolver, receiver, adapter, executor, token } = await loadFixture(deployFixture);
+
+    const executorBalance = 123_456_789_012n;
+    await token.write.mint([
+      executor.address, // account
+      executorBalance, // amount
+    ]);
+
+    const order = {
+      fromActor: adapter.address,
+      fromToken: token.address,
+      fromAmount: 444_222n,
+      toActor: resolver.address,
+    } as const;
+    const orderHash = await receiver.read.calcOrderMockHash([order]);
+
+    const resolverData = encodeFunctionData({
+      abi: resolver.abi,
+      functionName: 'receiveDelegateOrderAsset',
+      args: [
+        order, // order
+        resolverFlowFlags({ shouldRevert: true }), // flowFlags (simulate resolver revert)
+      ],
+    });
+
+    const approveCall = {
+      target: token.address,
+      value: 0n,
+      callData: encodeFunctionData({
+        abi: token.abi,
+        functionName: 'approve',
+        args: [
+          adapter.address, // spender
+          maxUint256, // value
+        ],
+      }),
+      allowFailure: true,
+      isDelegateCall: false,
+    } as const;
+    const receiveCall = {
+      target: adapter.address,
+      value: 0n,
+      callData: encodeFunctionData({
+        abi: adapter.abi,
+        functionName: 'receiveDelegateAsset',
+        args: [
+          token.address, // token
+          order.fromAmount, // amount
+          executorBalance - order.fromAmount, // minBalanceAfter
+          orderHash, // orderHash
+          resolver.address, // resolver
+          resolverData, // resolverData
+        ],
+      }),
+      allowFailure: false,
+      isDelegateCall: false,
+    } as const;
+
+    await expect(
+      executor.write.executeCalls([
+        [approveCall, receiveCall], // calls
+      ]),
+    ).rejectedWith(
+      `custom error 'ResolverTestError()'`,
     );
   });
 });
