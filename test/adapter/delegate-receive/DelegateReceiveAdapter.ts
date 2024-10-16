@@ -1,4 +1,4 @@
-import { checksumAddress, encodeAbiParameters, encodeEventTopics, encodeFunctionData, maxUint256 } from 'viem';
+import { checksumAddress, encodeEventTopics, encodeFunctionData, maxUint256 } from 'viem';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox-viem/network-helpers';
 import { viem } from 'hardhat';
 import { expect } from 'chai';
@@ -6,6 +6,7 @@ import { expect } from 'chai';
 import { logGas } from '../../utils/logGas';
 import { expectEvent } from '../../utils/expectEvent';
 import { resolverFlowFlags } from '../../utils/resolverFlow';
+import { ReceiveOrderMock } from '../../utils/order';
 
 describe('DelegateReceiveAdapter', function () {
   async function deployFixture() {
@@ -33,12 +34,12 @@ describe('DelegateReceiveAdapter', function () {
       executorBalance, // amount
     ]);
 
-    const order = {
+    const order: ReceiveOrderMock = {
       fromActor: adapter.address,
       fromToken: token.address,
       fromAmount: 444_222n,
       toActor: resolver.address,
-    } as const;
+    };
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
     const resolverData = encodeFunctionData({
@@ -63,7 +64,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: true,
       isDelegateCall: false,
-    } as const;
+    };
     const receiveCall = {
       target: adapter.address,
       value: 0n,
@@ -81,7 +82,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: false,
       isDelegateCall: false,
-    } as const;
+    };
 
     {
       const hash = await executor.write.executeCalls([
@@ -128,12 +129,12 @@ describe('DelegateReceiveAdapter', function () {
       executorBalance, // amount
     ]);
 
-    const order = {
+    const order: ReceiveOrderMock = {
       fromActor: adapter.address,
       fromToken: token.address,
       fromAmount: 444_222n,
       toActor: resolver.address,
-    } as const;
+    };
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
     const approveCall = {
@@ -149,7 +150,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: true,
       isDelegateCall: false,
-    } as const;
+    };
 
     await executor.write.executeCalls([
       [approveCall], // calls
@@ -181,7 +182,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: false,
       isDelegateCall: false,
-    } as const;
+    };
 
     {
       const hash = await executor.write.executeCalls([
@@ -228,12 +229,12 @@ describe('DelegateReceiveAdapter', function () {
       executorBalance, // amount
     ]);
 
-    const order = {
+    const order: ReceiveOrderMock = {
       fromActor: adapter.address,
       fromToken: token.address,
       fromAmount: 444_222n,
       toActor: resolver.address,
-    } as const;
+    };
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
     const resolverData = encodeFunctionData({
@@ -262,7 +263,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: false,
       isDelegateCall: false,
-    } as const;
+    };
 
     await expect(
       executor.write.executeCalls([
@@ -282,12 +283,12 @@ describe('DelegateReceiveAdapter', function () {
       executorBalance, // amount
     ]);
 
-    const order = {
+    const order: ReceiveOrderMock = {
       fromActor: adapter.address,
       fromToken: token.address,
       fromAmount: executorBalance + 1n, // Exceeds balance
       toActor: resolver.address,
-    } as const;
+    };
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
     const resolverData = encodeFunctionData({
@@ -312,7 +313,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: true,
       isDelegateCall: false,
-    } as const;
+    };
     const receiveCall = {
       target: adapter.address,
       value: 0n,
@@ -330,7 +331,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: false,
       isDelegateCall: false,
-    } as const;
+    };
 
     await expect(
       executor.write.executeCalls([
@@ -350,12 +351,12 @@ describe('DelegateReceiveAdapter', function () {
       executorBalance, // amount
     ]);
 
-    const order = {
+    const order: ReceiveOrderMock = {
       fromActor: adapter.address,
       fromToken: token.address,
       fromAmount: 444_222n,
       toActor: resolver.address,
-    } as const;
+    };
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
     const resolverData = encodeFunctionData({
@@ -383,7 +384,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: true,
       isDelegateCall: false,
-    } as const;
+    };
     const receiveCall = {
       target: adapter.address,
       value: 0n,
@@ -401,7 +402,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: false,
       isDelegateCall: false,
-    } as const;
+    };
 
     await expect(
       executor.write.executeCalls([
@@ -421,12 +422,12 @@ describe('DelegateReceiveAdapter', function () {
       executorBalance, // amount
     ]);
 
-    const order = {
+    const order: ReceiveOrderMock = {
       fromActor: adapter.address,
       fromToken: token.address,
       fromAmount: 444_222n,
       toActor: resolver.address,
-    } as const;
+    };
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
     // Mark as already received
@@ -454,7 +455,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: true,
       isDelegateCall: false,
-    } as const;
+    };
     const receiveCall = {
       target: adapter.address,
       value: 0n,
@@ -472,7 +473,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: false,
       isDelegateCall: false,
-    } as const;
+    };
 
     await expect(
       executor.write.executeCalls([
@@ -492,12 +493,12 @@ describe('DelegateReceiveAdapter', function () {
       executorBalance, // amount
     ]);
 
-    const order = {
+    const order: ReceiveOrderMock = {
       fromActor: adapter.address,
       fromToken: token.address,
       fromAmount: 444_222n,
       toActor: resolver.address,
-    } as const;
+    };
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
     const resolverData = encodeFunctionData({
@@ -522,7 +523,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: true,
       isDelegateCall: false,
-    } as const;
+    };
     const receiveCall = {
       target: adapter.address,
       value: 0n,
@@ -540,7 +541,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: false,
       isDelegateCall: false,
-    } as const;
+    };
 
     await expect(
       executor.write.executeCalls([
@@ -560,12 +561,12 @@ describe('DelegateReceiveAdapter', function () {
       executorBalance, // amount
     ]);
 
-    const order = {
+    const order: ReceiveOrderMock = {
       fromActor: adapter.address,
       fromToken: token.address,
       fromAmount: 444_222n,
       toActor: resolver.address,
-    } as const;
+    };
     const orderHash = await receiver.read.calcOrderMockHash([order]);
 
     const resolverData = encodeFunctionData({
@@ -590,7 +591,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: true,
       isDelegateCall: false,
-    } as const;
+    };
     const receiveCall = {
       target: adapter.address,
       value: 0n,
@@ -608,7 +609,7 @@ describe('DelegateReceiveAdapter', function () {
       }),
       allowFailure: false,
       isDelegateCall: false,
-    } as const;
+    };
 
     await expect(
       executor.write.executeCalls([

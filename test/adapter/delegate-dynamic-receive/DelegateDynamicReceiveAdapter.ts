@@ -3,10 +3,14 @@ import { loadFixture } from '@nomicfoundation/hardhat-toolbox-viem/network-helpe
 import { viem } from 'hardhat';
 import { expect } from 'chai';
 
+import { encodeDynamicResolver } from '../../lib/dynamicResolver';
+import { Order } from '../../lib/order';
+import { calcOrderHash } from '../../lib/orderHash';
+
 import { logGas } from '../../utils/logGas';
 import { expectEvent } from '../../utils/expectEvent';
 import { resolverFlowFlags } from '../../utils/resolverFlow';
-import { encodeDynamicResolver } from '../../lib/dynamicResolver';
+import { Call } from '../../utils/call';
 
 describe('DelegateDynamicReceiveAdapter', function () {
   async function deployFixture() {
@@ -15,6 +19,7 @@ describe('DelegateDynamicReceiveAdapter', function () {
     const adapter = await viem.deployContract('DelegateDynamicReceiveAdapter', [receiver.address]);
     const executor = await viem.deployContract('CallExecutor');
     const token = await viem.deployContract('TokenMock');
+    const rate = await viem.deployContract('RateLibTest');
 
     return {
       resolver,
@@ -22,11 +27,12 @@ describe('DelegateDynamicReceiveAdapter', function () {
       adapter,
       executor,
       token,
+      rate,
     };
   }
 
   it('Should receive order asset though delegate dynamic adapter', async function () {
-    const { resolver, receiver, adapter, executor, token } = await loadFixture(deployFixture);
+    const { resolver, receiver, adapter, executor, token, rate } = await loadFixture(deployFixture);
 
     const executorBalance = 123_456_789_012n;
     await token.write.mint([
@@ -35,7 +41,7 @@ describe('DelegateDynamicReceiveAdapter', function () {
     ]);
 
     const maxExtraFromAmount = 100_000n;
-    const dynamicOrder = {
+    const dynamicOrder: Order = {
       fromActor: adapter.address, // In-use
       fromActorReceiver: '0x1101101101101101101101101101101101101101',
       fromChain: 12_345n,
@@ -44,7 +50,7 @@ describe('DelegateDynamicReceiveAdapter', function () {
       toActor: resolver.address, // In-use
       toChain: 54_321n,
       toToken: '0x3000300030003000300030003000300030003000',
-      toAmount: 678_981_155n,
+      toAmount: 1_000000000_000000000_000000000_000000000n, // In-use (rate 1.0)
       collateralReceiver: '0x1001111001111010100011001000000000111111',
       collateralChain: 55_555n,
       collateralAmount: 17_823_000n,
@@ -54,7 +60,7 @@ describe('DelegateDynamicReceiveAdapter', function () {
       timeToSend: 300n,
       timeToLiqSend: 600n,
       nonce: 1_337_133_713_371_337n,
-    } as const;
+    };
     const dynamicOrderHash = await receiver.read.calcOrderMockHash([dynamicOrder]);
     const dynamicOrderOffset = 36n;
 
@@ -70,7 +76,7 @@ describe('DelegateDynamicReceiveAdapter', function () {
       ],
     });
 
-    const approveCall = {
+    const approveCall: Call = {
       target: token.address,
       value: 0n,
       callData: encodeFunctionData({
@@ -83,8 +89,8 @@ describe('DelegateDynamicReceiveAdapter', function () {
       }),
       allowFailure: true,
       isDelegateCall: false,
-    } as const;
-    const receiveCall = {
+    };
+    const receiveCall: Call = {
       target: adapter.address,
       value: 0n,
       callData: encodeFunctionData({
@@ -100,17 +106,18 @@ describe('DelegateDynamicReceiveAdapter', function () {
       }),
       allowFailure: false,
       isDelegateCall: false,
-    } as const;
+    };
 
-    let orderHash: Hex;
+    const order = { ...dynamicOrder };
+    order.fromAmount += maxExtraFromAmount;
+    order.toAmount = await rate.read.applyRate([order.fromAmount, dynamicOrder.toAmount]);
+    const orderHash = calcOrderHash(order);
+
     {
       const hash = await executor.write.executeCalls([
         [approveCall, receiveCall], // calls
       ]);
       await logGas(hash, 'Receive though delegate dynamic adapter with 2 executor calls (approve + receive)');
-
-      orderHash = await adapter.read.receivedOrderHash([dynamicOrderHash]);
-      expect(orderHash).not.equal(zeroHash);
 
       await expectEvent(hash, {
         emitter: adapter.address,
@@ -126,12 +133,16 @@ describe('DelegateDynamicReceiveAdapter', function () {
     }
 
     {
+      const hash = await adapter.read.receivedOrderHash([dynamicOrderHash]);
+      expect(hash).equal(orderHash);
+    }
+    {
       const received = await receiver.read.orderAssetReceived([orderHash]);
       expect(received).equal(true);
     }
     {
       const balance = await token.read.balanceOf([resolver.address]);
-      expect(balance).equal(dynamicOrder.fromAmount + maxExtraFromAmount);
+      expect(balance).equal(order.fromAmount);
     }
     {
       const balance = await token.read.balanceOf([adapter.address]);
@@ -139,7 +150,7 @@ describe('DelegateDynamicReceiveAdapter', function () {
     }
     {
       const balance = await token.read.balanceOf([executor.address]);
-      expect(balance).equal(executorBalance - (dynamicOrder.fromAmount + maxExtraFromAmount));
+      expect(balance).equal(executorBalance - order.fromAmount);
     }
   });
 });

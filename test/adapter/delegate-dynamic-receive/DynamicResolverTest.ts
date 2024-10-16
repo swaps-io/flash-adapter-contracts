@@ -4,6 +4,8 @@ import { viem } from 'hardhat';
 import { expect } from 'chai';
 
 import { encodeDynamicResolver } from '../../lib/dynamicResolver';
+import { Order } from '../../lib/order';
+
 import { resolverFlowFlags } from '../../utils/resolverFlow';
 
 describe('DynamicResolverTest', function () {
@@ -78,7 +80,7 @@ describe('DynamicResolverTest', function () {
   it('Should decode order from dynamic resolver data at offset 4', async function () {
     const { test, resolver } = await loadFixture(deployFixture);
 
-    const order = {
+    const order: Order = {
       fromActor: '0x0101010101010101010101010101010101010101',
       fromActorReceiver: '0x1101101101101101101101101101101101101101',
       fromChain: 12_345n,
@@ -97,7 +99,7 @@ describe('DynamicResolverTest', function () {
       timeToSend: 300n,
       timeToLiqSend: 600n,
       nonce: 1_337_133_713_371_337n,
-    } as const;
+    };
     const orderOffset = 4n;
 
     const dynamicResolver = encodeDynamicResolver(resolver.address, orderOffset);
@@ -121,7 +123,7 @@ describe('DynamicResolverTest', function () {
   it('Should decode order from dynamic resolver data at offset 36', async function () {
     const { test, resolver } = await loadFixture(deployFixture);
 
-    const order = {
+    const order: Order = {
       fromActor: '0x0101010101010101010101010101010101010101',
       fromActorReceiver: '0x1101101101101101101101101101101101101101',
       fromChain: 12_345n,
@@ -140,7 +142,7 @@ describe('DynamicResolverTest', function () {
       timeToSend: 300n,
       timeToLiqSend: 600n,
       nonce: 1_337_133_713_371_337n,
-    } as const;
+    };
     const orderOffset = 36n;
 
     const dynamicResolver = encodeDynamicResolver(resolver.address, orderOffset);
@@ -165,7 +167,7 @@ describe('DynamicResolverTest', function () {
   it('Should decode order from dynamic resolver data at offset 100', async function () {
     const { test, resolver } = await loadFixture(deployFixture);
 
-    const order = {
+    const order: Order = {
       fromActor: '0x0101010101010101010101010101010101010101',
       fromActorReceiver: '0x1101101101101101101101101101101101101101',
       fromChain: 12_345n,
@@ -184,7 +186,7 @@ describe('DynamicResolverTest', function () {
       timeToSend: 300n,
       timeToLiqSend: 600n,
       nonce: 1_337_133_713_371_337n,
-    } as const;
+    };
     const orderOffset = 100n;
 
     const dynamicResolver = encodeDynamicResolver(resolver.address, orderOffset);
@@ -202,7 +204,7 @@ describe('DynamicResolverTest', function () {
     });
 
     const resolverOrder = await test.read.resolverOrder([dynamicResolver, resolverData]);
-    const keys = Object.keys(order) as (keyof typeof order)[];
+    const keys = Object.keys(order) as (keyof Order)[];
     for (const key of keys) {
       expect(resolverOrder[key]).equal(order[key]);
     }
@@ -211,7 +213,7 @@ describe('DynamicResolverTest', function () {
   it('Should calc resolver order hash', async function () {
     const { test, resolver } = await loadFixture(deployFixture);
 
-    const order = {
+    const order: Order = {
       fromActor: '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
       fromActorReceiver: '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
       fromChain: 512n,
@@ -230,7 +232,7 @@ describe('DynamicResolverTest', function () {
       timeToSend: 112233n,
       timeToLiqSend: 330101033n,
       nonce: 421337n,
-    } as const;
+    };
     const orderOffset = 36n;
 
     const dynamicResolver = encodeDynamicResolver(resolver.address, orderOffset);
