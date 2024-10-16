@@ -57,7 +57,7 @@ contract DelegateDynamicReceiveAdapter is IDelegateDynamicReceiveAdapter {
 
     function _resolverOrder(bytes32 resolver_, bytes memory resolverData_) internal pure returns (Order memory order) {
         uint256 orderOffset = _resolverOrderOffset(resolver_);
-        assembly { order := add(resolverData_, orderOffset) }
+        assembly { order := add(add(resolverData_, 32), orderOffset) }
     }
 
     function _resolverOrderOffset(bytes32 resolver_) internal pure returns (uint256) {
