@@ -5,22 +5,7 @@ import { expect } from 'chai';
 
 import { logGas } from '../../utils/logGas';
 import { expectEvent } from '../../utils/expectEvent';
-
-interface ResolverFlowFlagParams {
-  shouldRevert?: boolean;
-  ignoreReceive?: boolean;
-}
-
-const resolverFlowFlags = (params: ResolverFlowFlagParams = {}): bigint => {
-  let flags = 0n;
-  if (params.shouldRevert) {
-    flags |= 1n;
-  }
-  if (params.ignoreReceive) {
-    flags |= 2n;
-  }
-  return flags;
-}
+import { resolverFlowFlags } from '../../utils/resolverFlow';
 
 describe('DelegateReceiveAdapter', function () {
   async function deployFixture() {
