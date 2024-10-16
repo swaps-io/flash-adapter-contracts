@@ -19,36 +19,39 @@ contract DelegateDynamicReceiveAdapter is IDelegateDynamicReceiveAdapter {
         orderReceiver = orderReceiver_;
     }
 
-    function receiveDelegateAsset(IERC20 token_, uint256 minAmount_, uint256 maxAmount_, uint256 minBalanceAfter_, uint256 toAmountRate_, bytes32 dynOrderHash_, bytes32 resolver_, bytes memory resolverData_) external {
-        require(minAmount_ > 0 && minAmount_ <= maxAmount_, InvalidAmountRange(minAmount_, maxAmount_));
-        require(receivedOrderHash[dynOrderHash_] == 0, DynOrderAlreadyReceived(dynOrderHash_));
-
-        uint256 balance = token_.balanceOf(msg.sender);
-        uint256 minBalance = minBalanceAfter_ + minAmount_;
-        require(balance >= minBalance, InsufficientBalance(balance, minBalance));
-
-        uint256 amount = balance - minBalanceAfter_;
-        if (amount > maxAmount_) {
-            amount = maxAmount_;
-        }
+    function receiveDelegateAsset(uint256 maxExtraFromAmount_, uint256 minBalanceAfter_, bytes32 dynamicOrderHash_, bytes32 resolver_, bytes memory resolverData_) external {
+        require(receivedOrderHash[dynamicOrderHash_] == 0, DynamicOrderAlreadyReceived(dynamicOrderHash_));
 
         Order memory order = _resolverOrder(resolver_, resolverData_);
-        order.fromAmount = amount;
-        order.toAmount = RateLib.applyRate(amount, toAmountRate_);
+        IERC20 fromToken = IERC20(order.fromToken);
+        uint256 fromAmount = order.fromAmount;
+
+        uint256 balance = fromToken.balanceOf(msg.sender);
+        uint256 minBalance = fromAmount + minBalanceAfter_;
+        require(balance >= minBalance, InsufficientBalance(balance, minBalance));
+
+        uint256 extraFromAmount = balance - minBalance;
+        if (extraFromAmount > maxExtraFromAmount_) {
+            extraFromAmount = maxExtraFromAmount_;
+        }
+        fromAmount += extraFromAmount;
+
+        order.fromAmount = fromAmount;
+        order.toAmount = RateLib.applyRate(fromAmount, order.toAmount); // toAmountRate
 
         bytes32 orderHash = OrderHashLib.calcOrderHash(order);
         require(!orderReceiver.orderAssetReceived(orderHash), OrderAlreadyReceived(orderHash));
-        receivedOrderHash[dynOrderHash_] = orderHash;
+        receivedOrderHash[dynamicOrderHash_] = orderHash;
 
-        SafeERC20.safeTransferFrom(token_, msg.sender, address(this), amount);
-        if (token_.allowance(address(this), address(orderReceiver)) < amount) {
-            SafeERC20.forceApprove(token_, address(orderReceiver), type(uint256).max);
+        SafeERC20.safeTransferFrom(fromToken, msg.sender, address(this), fromAmount);
+        if (fromToken.allowance(address(this), address(orderReceiver)) < fromAmount) {
+            SafeERC20.forceApprove(fromToken, address(orderReceiver), type(uint256).max);
         }
 
         Address.functionCall(_resolverAddress(resolver_), resolverData_);
 
         require(orderReceiver.orderAssetReceived(orderHash), OrderNotReceived(orderHash));
-        emit DelegateDynamicAssetReceive(dynOrderHash_, orderHash);
+        emit DelegateDynamicAssetReceive(dynamicOrderHash_, orderHash);
     }
 
     function isValidSignature(bytes32, bytes memory) external pure returns (bytes4) {
