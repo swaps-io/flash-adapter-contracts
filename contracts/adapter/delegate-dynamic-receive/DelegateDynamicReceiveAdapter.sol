@@ -32,9 +32,7 @@ contract DelegateDynamicReceiveAdapter is IDelegateDynamicReceiveAdapter {
             amount = maxAmount_;
         }
 
-        uint256 orderOffset = _resolverOrderOffset(resolver_);
-        Order memory order;
-        assembly { order := add(resolverData_, orderOffset) }
+        Order memory order = _resolverOrder(resolver_, resolverData_);
         order.fromAmount = amount;
         order.toAmount = RateLib.applyRate(amount, toAmountRate_);
 
@@ -55,6 +53,11 @@ contract DelegateDynamicReceiveAdapter is IDelegateDynamicReceiveAdapter {
 
     function isValidSignature(bytes32, bytes memory) external pure returns (bytes4) {
         return this.isValidSignature.selector;
+    }
+
+    function _resolverOrder(bytes32 resolver_, bytes memory resolverData_) internal pure returns (Order memory order) {
+        uint256 orderOffset = _resolverOrderOffset(resolver_);
+        assembly { order := add(resolverData_, orderOffset) }
     }
 
     function _resolverOrderOffset(bytes32 resolver_) internal pure returns (uint256) {
