@@ -25,6 +25,7 @@ contract DelegateDynamicReceiveAdapter is IDelegateDynamicReceiveAdapter {
         Order memory order = _resolverOrder(resolver_, resolverData_);
         IERC20 fromToken = IERC20(order.fromToken);
         uint256 fromAmount = order.fromAmount;
+        uint256 toAmountRate = RateLib.calcRate(fromAmount, order.toAmount);
 
         uint256 balance = fromToken.balanceOf(msg.sender);
         uint256 minBalance = fromAmount + minBalanceAfter_;
@@ -34,12 +35,15 @@ contract DelegateDynamicReceiveAdapter is IDelegateDynamicReceiveAdapter {
         if (extraFromAmount > maxExtraFromAmount_) {
             extraFromAmount = maxExtraFromAmount_;
         }
-        fromAmount += extraFromAmount;
 
-        order.fromAmount = fromAmount;
-        order.toAmount = RateLib.applyRate(fromAmount, order.toAmount); // toAmountRate
+        bytes32 orderHash = dynamicOrderHash_;
+        if (extraFromAmount > 0) {
+            fromAmount += extraFromAmount;
+            order.fromAmount = fromAmount;
+            order.toAmount = RateLib.applyRate(fromAmount, toAmountRate);
+            orderHash = OrderHashLib.calcOrderHash(order);
+        }
 
-        bytes32 orderHash = OrderHashLib.calcOrderHash(order);
         require(!orderReceiver.orderAssetReceived(orderHash), OrderAlreadyReceived(orderHash));
         receivedOrderHash[dynamicOrderHash_] = orderHash;
 
